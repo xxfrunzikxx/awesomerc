@@ -1,8 +1,3 @@
--- Originally implemented by 
--- Alexander Yakushev [unlogic]
--- (https://github.com/alexander-yakushev)
--- asyncshell](https://gist.github.com/1466863)
-
 -- Asynchronous io.popen for Awesome WM.
 -- How to use...
 -- ...asynchronously:

@@ -40,9 +40,9 @@ function network.new()
    network_text:set_markup("disc")
 
    system.network.hosts = hosts
-   system.network.add_callback(function(data)
-                                  data_callback(_widget, data)
-                               end)
+   -- system.network.add_callback(function(data)
+                                  -- data_callback(_widget, data)
+                               -- end)
    system.network.init()
 
    return _widget

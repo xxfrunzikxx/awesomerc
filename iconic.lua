@@ -90,7 +90,7 @@ end
 function iconic.lookup_icon(icon_file, args)
    args = args or {}
    local default_icon = args.default_icon
-   local preferred_size = (args.preferred_size and find(all_icon_sizes, args.preferred_size)) or 8
+   local preferred_size = (args.preferred_size and find(all_icon_sizes, args.preferred_size)) or 1
    local icon_types = args.icon_types or { '/apps/', '/actions/', '/devices/',
                                            '/places/', '/categories/', '/status/' }
 
