@@ -41,7 +41,7 @@ theme.menu_icon         = res("icons/submenu.png")
 theme.menu_submenu_icon = res("icons/submenu.png")
 theme.menu_height       = 16
 theme.menu_width        = 110
-theme.menu_border_width = 3
+theme.menu_border_width = 0
 
 
 

@@ -41,10 +41,10 @@ function statusbar.create(s)
    l = { left = { w.menu_icon, I, w.tags[s], I, w.prompt[s] },
          middle = w.programs[s],
          right = { I,w.systray, I,
-         --w.mpd.layout, 
-         w.arrl_ld, w.kbd, w.arrl_dl, 
-         w.net,I, 
-         w.arrl_ld,w.cpu,w.mem,  w.arrl_dl, 
+         --w.mpd.layout,
+         w.arrl_ld, w.kbd, w.arrl_dl,
+         w.net,I,
+         w.arrl_ld,w.cpu,w.mem,  w.arrl_dl,
          I, w.vol, I,
          w.battery, I,
          w.arrl_ld, w.time }
@@ -84,20 +84,21 @@ end
 function statusbar.initialize()
    -- Menu
    local mainmenu = { items = {
-                                  { 'awesome', { 
+                                  { 'awesome', {
                                                   { "restart", awesome.restart  },
-                                                  { "quit",    awesome.quit, beautiful.awesome_icon     } 
+                                                  { "quit",    awesome.quit, beautiful.awesome_icon     }
                                                },
                                   beautiful.awesome_icon
                                   },
-                                  { "system",  	{ 
+                                  { "system",  	{
+                                                  { "suspend",   function() awful.util.spawn("systemctl suspend")  end },
                                                   { "reboot",   function() awful.util.spawn("reboot")  end },
-                                                  { "shutdown", function() awful.util.spawn("shutdown")  end }
+                                                  { "shutdown", function() awful.util.spawn("shutdown -h now")  end }
                                                 },
-                                  beautiful.awesome_icon 
-                                  } 
+                                  beautiful.awesome_icon
+                                  }
                               },
-                      theme = { width = beautiful.menu_width } 
+                      theme = { width = beautiful.menu_width }
                     }
 
    widgets.menu_icon = awful.widget.launcher(
@@ -116,7 +117,7 @@ widgets.arrl_dl = wibox.widget.imagebox()
 widgets.arrl_dl:set_image(beautiful.arrl_dl)
 widgets.arrl_ld = wibox.widget.imagebox()
 widgets.arrl_ld:set_image(beautiful.arrl_ld)
-   
+
 
 --Systray
 widgets.systray = wibox.widget.systray()
@@ -158,7 +159,7 @@ widgets.systray = wibox.widget.systray()
    -- Volume widget
    widgets.vol = topjets.volume();
    widgets.vol:buttons(
-      keymap({ mouse.LEFT, function() widgets.vol:mute() end },
+      keymap({ mouse.LEFT, function() widgets.vol:toggle() end },
              { mouse.WHEEL_UP, function() widgets.vol:inc() end },
              { mouse.WHEEL_DOWN, function() widgets.vol:dec() end }))
 

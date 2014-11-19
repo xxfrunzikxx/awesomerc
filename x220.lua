@@ -32,19 +32,22 @@ userdir = utility.pslurp("echo $HOME", "*line")
 
 -- Autorun programs
 autorunApps = {
-  "setxkbmap -layout 'us, ru, ua' -variant ',winkeys,winkeys' -option grp:alt_shift_toggle -option compose:ralt -option terminate:ctrl_alt_bksp"
+  "setxkbmap -layout 'us, ua' -variant ',winkeys,winkeys' -option grp:alt_shift_toggle -option compose:ralt -option terminate:ctrl_alt_bksp"
 }
 
 runOnceApps = {
       'kbdd',
-      'skype'	
+      'skype',
+      'firefox'
 }
 
 utility.autorun(autorunApps, runOnceApps)
 
 
+
 --Enabling numlockdo
 awful.util.spawn("numlockx on")
+
 
 
 -- {{{ Variable definitions
@@ -102,6 +105,7 @@ layouts = {
    awful.layout.suit.floating, 	      -- 1
    awful.layout.suit.tile.left,       -- 2
    awful.layout.suit.max,		          -- 3
+   awful.layout.suit.tile.bottom,             -- 3
 }
 
 
@@ -114,7 +118,7 @@ do
    for s = 1, screen.count() do
       -- Each screen has its own tag table.
       tags[s] = awful.tag({ "/dev", "/net", "/im", "/doc", "/mov", "/oth"}, s,
-                          {  m ,  f ,  f ,  f ,  f ,  f })
+                          {  f,  f ,  f ,  f ,  f ,  f })
    end
 end
 
@@ -140,6 +144,7 @@ menubar.app_folders = { "/usr/share/applications/" }
 menubar.show_categories = true
 menubar.prompt_args = { bg_cursor = beautiful.bg_cursor }
 menubar.geometry.height = 24;
+menubar.refresh()
 
 
 -- Interact with snap script
@@ -170,39 +175,68 @@ end
 
 
 
---- Smart Move a client to a screen. Default is next screen, cycling.
+-- Smart Move a client to a screen. Default is next screen, cycling.
 -- @param c The client to move.scripts/switch-d``isplay
----- @param s The screen number, default to current + 1.
---function smart_movetoscreen(c, s)
---   local was_maximized = { h = false, v = false }
---   if c.maximized_horizontal then
---      c.maximized_horizontal = false
---      was_maximized.h = true
---   end
---   if c.maximized_vertical then
---      c.maximized_vertical = false
---      was_maximized.v = true
---   end
+-- @param s The screen number, default to current + 1.
+function smart_movetoscreen(c, s)
+  local was_maximized = { h = false, v = false }
+  if c.maximized_horizontal then
+     c.maximized_horizontal = false
+     was_maximized.h = true
+  end
+  if c.maximized_vertical then
+     c.maximized_vertical = false
+     was_maximized.v = true
+  end
 
---   local sel = c or client.focus
---   if sel then
---      local sc = screen.count()
---      if not s then
---         s = sel.screen + 1
---      end
---      if s > sc then s = 1 elseif s < 1 then s = sc end
---      sel.screen = s
---      mouse.coords(screen[s].geometry)
---   end
+  local sel = c or client.focus
+  local current_tag = awful.tag.getidx()
+  if sel then
+     local sc = screen.count()
+     if not s then
+        s = sel.screen + 1
+     end
+     if s > sc then s = 1 elseif s < 1 then s = sc end
+     sel.screen = s
+     awful.client.movetotag(tags[s][current_tag])
+     awful.tag.viewonly( tags[s][current_tag] )
+     mouse.coords(screen[s].geometry)
+  end
 
---   if was_maximized.h then
---      c.maximized_horizontal = true
---   end
---   if was_maximized.v then
---      c.maximized_vertical = true
---   end
---end
---
+  if was_maximized.h then
+     c.maximized_horizontal = true
+  end
+  if was_maximized.v then
+     c.maximized_vertical = true
+  end
+end
+
+function autoscreenenable()
+  local dmode = utility.pslurp("cat /sys/class/drm/card0-VGA-1/status", "*line");                        
+  local info = utility.pslurp("xrandr | grep VGA1", "*all");
+  local position = "--right-of"
+   if not info or string.len(info) == 0 then
+      return false
+   end
+
+
+   local _, _, status = string.find(info, "VGA1 (%w+)");
+   local _, _, _, mode, rest = string.find(info, "VGA1 (%w+) (%w+%+%d+%+%d+)");
+
+  if (status == "connected") then
+    if (mode == nil) then
+      utility.spawn_in_terminal("xrandr --output VGA1 --auto "..position.." LVDS1"); 
+    else
+      utility.spawn_in_terminal("xrandr --output VGA1 --off");
+    end 
+  else
+      utility.spawn_in_terminal("xrandr --output VGA1 --off");
+  end
+  -- if (dmode == "connected" ) then                             
+    -- utility.spawn_in_terminal("xrandr --output VGA1 --auto --right-of LVDS1");       
+  -- end
+end
+
 
 
 
@@ -219,6 +253,9 @@ globalkeys = awful.util.table.join(
    awful.key({                   }, "XF86Display",            function() utility.spawn_in_terminal("scripts/switch-display") end),
    awful.key({                   }, "XF86AudioLowerVolume",   function() statusbar.widgets.vol:dec() end),
    awful.key({                   }, "XF86AudioRaiseVolume",   function() statusbar.widgets.vol:inc() end),
+   awful.key({                   }, "XF86AudioMute",   function() statusbar.widgets.vol:mute() end),
+   awful.key({         "Shift"   }, "XF86AudioLowerVolume",   function() statusbar.widgets.vol:mute() end),
+   awful.key({         "Shift"   }, "XF86AudioRaiseVolume",   function() statusbar.widgets.vol:unmute() end),
    -- awful.key({ modkey,           }, "e",      function() run_or_raise("pcmanfm", { class = "pcmanfm" }) end),
    awful.key({ modkey,           }, "e",      function() awful.util.spawn("pcmanfm")    end),
    -- awful.key({ modkey,           }, "d",      function()  utility.view_first_empty()    end ),
@@ -240,6 +277,7 @@ globalkeys = awful.util.table.join(
    awful.key({ modkey, "Control" }, "k",    function () awful.screen.focus_relative(-1)    end),
    awful.key({ modkey,           }, "u",    awful.client.urgent.jumpto),
    awful.key({ modkey,           }, "i",    function () awful.screen.focus_relative( 1)    end),
+   awful.key({ modkey,        }, "s",    autoscreenenable ),
    --awful.key({ modkey,           }, "Tab",  function () awful.client.focus.history.previous() if client.focus then client.focus:raise() end end),
 
    -- Standard program
@@ -260,9 +298,10 @@ globalkeys = awful.util.table.join(
    awful.key({ modkey,            }, "space", function () awful.layout.inc(layouts,  1) end),
    awful.key({ modkey, "Shift"    }, "space", function () awful.layout.inc(layouts, -1) end),
    awful.key({ modkey, "Control"  }, "n", awful.client.restore),
-   awful.key({                    }, "Print",  function () awful.util.spawn_with_shell("scrot -e 'mv $f ~/Pictures/screenshots/ 2>/dev/null && gpicview ~/Pictures/screenshots/$f'") end),
-   --awful.key({                    }, "Print", function () awful.util.spawn("snap " .. os.date("%d%m%Y_%H%M%S")) end ),
-   awful.key({ modkey             }, "Print", function () utility.spawn_in_terminal("scripts/snappy") end),
+   -- awful.key({                    }, "Print",  function () awful.util.spawn_with_shell("scrot -e 'mv $f ~/Pictures/screenshots/ 2>/dev/null'") end),
+   awful.key({                    }, "Print", function () awful.util.spawn("snap " .. os.date("%d%m%Y_%H%M%S")) end ),
+   -- awful.key({ modkey             }, "Print", function () utility.spawn_in_terminal("scripts/snappy") end),
+   awful.key({ modkey             }, "Print", function () utility.spawn("file=/home/frunzik/Pictures/Screenshot_$(date '+%Y%m%d-%H%M%S').png && gnome-screenshot -a --file=$file && imgurbash $file") end),
    awful.key({ modkey             }, "b", function ()
                                  statusbar.wiboxes[mouse.screen].visible = not statusbar.wiboxes[mouse.screen].visible
                                  local clients = client.get()
@@ -390,13 +429,13 @@ awful.rules.rules = {
                     buttons = clientbuttons
                   }},
     --/dev Screen
-    { rule = { class = "idea"       },  properties = { tag = tags[1][1]} },
-    { rule = { class = "rubymine"   },  properties = { tag = tags[1][1]} },
+    { rule = { class = "idea"       },  properties = { tag = tags[1][1], maximized_vertical = true, maximized_horizontal = true} },
+    { rule = { class = "rubymine"   },  properties = { tag = tags[1][1], maximized_vertical = true, maximized_horizontal = true} },
     { rule = { class = "subl"       },  properties = { tag = tags[1][1], switchtotag = true  } },
     { rule = { class = "Emacs"      },  properties = { tag = tags[1][1], switchtotag = true  } },
 
      --/net Screen
-    { rule = { class = "Firefox"   },   properties = { tag = tags[1][2] }, callback = awful.titlebar.add },
+    { rule = { class = "Firefox"   },   properties = { tag = tags[1][2], maximized_vertical = true, maximized_horizontal = true }, callback = awful.titlebar.add },
     { rule = { class = "Chromium"  },   properties = { tag = tags[1][2] } },
 
      --/im Screen
@@ -415,8 +454,8 @@ awful.rules.rules = {
                                                         } },
     
      --/mov Screen
-    { rule = { class = "Vlc"       },   properties = {  tag = tags[1][5] , switchtotag = true,
-                                                        fullscreen = true
+    { rule = { class = "Vlc"       },   properties = {  tag = tags[1][5] , switchtotag = true
+                                                        
                                                         } },
 
     { rule = { class = "MPlayer"   },   properties = {  tag = tags[1][5] ,
@@ -432,7 +471,10 @@ awful.rules.rules = {
                                                         -- maximized_horizontal = true,
                                                         -- fullscreen = true 
                                                         } },     
-
+    { rule = { class = "urxvt"  },   properties = {  focus = true
+                                                        -- maximized_horizontal = true,
+                                                        -- fullscreen = true 
+                                                        } },  
 
 }
 

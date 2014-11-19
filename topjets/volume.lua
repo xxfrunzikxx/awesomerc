@@ -59,15 +59,41 @@ local function update_volume(w, f, to_notify)
 end
 
 function volume.inc(w)
-   update_volume(w, io.popen("amixer set Master 5%+"), true)
+   update_volume(w, io.popen("amixer -c 0 set Master 1dB+"), true)
 end
 
 function volume.dec(w)
-   update_volume(w, io.popen("amixer set Master 5%-"), true)
+   update_volume(w, io.popen("amixer -c 0 set Master 1dB-"), true)
+end
+
+local function mute(w)
+   update_volume(w, io.popen("amixer -c 0 set Speaker mute"), true)
+   update_volume(w, io.popen("amixer -c 0 set Headphone mute"), true)
+   update_volume(w, io.popen("amixer -c 0 set Master mute"), true)
+end
+
+function unmute(w)
+   update_volume(w, io.popen("amixer -c 0 set Speaker unmute"), true)
+   update_volume(w, io.popen("amixer -c 0 set Headphone unmute"), true)
+   update_volume(w, io.popen("amixer -c 0 set Master unmute"), true)
 end
 
 function volume.mute(w)
-   update_volume(w, io.popen("amixer set Master toggle"), true)
+  mute(w)
+end
+
+function volume.unmute(w)
+  unmute(w)
+end
+
+function volume.toggle(w)
+
+  local state, vol = get_master_infos(io.popen("amixer -c 0 get Master"))
+  if state == "off" then
+    unmute(w)
+  else
+    mute(w)
+  end
 end
 
 function volume.new()
@@ -86,9 +112,11 @@ function volume.new()
    w.inc = volume.inc
    w.dec = volume.dec
    w.mute = volume.mute
-   scheduler.register_recurring("topjets_volume", 20,
+   w.unmute = volume.unmute
+   w.toggle = volume.toggle
+   scheduler.register_recurring("topjets_volume", 10,
                                 function()
-                                   update_volume(w, io.popen("amixer get Master"), false)
+                                   update_volume(w, io.popen("amixer sget Master"), false)
                                 end)
    return w
 end
